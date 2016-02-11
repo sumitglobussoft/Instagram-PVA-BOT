@@ -72,6 +72,7 @@ namespace BaseLibID
         public string Path;
         public DataSet ds;
         public string guid;
+        public string deviceid;
 
 
 

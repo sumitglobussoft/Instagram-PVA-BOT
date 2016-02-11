@@ -1,0 +1,16 @@
+D:\sonu\Instagram PVA Bot\Instagram PVA Bot\UploadPic\bin\Debug\UploadPic.dll
+D:\sonu\Instagram PVA Bot\Instagram PVA Bot\UploadPic\bin\Debug\UploadPic.pdb
+D:\sonu\Instagram PVA Bot\Instagram PVA Bot\UploadPic\bin\Debug\AccountManager.dll
+D:\sonu\Instagram PVA Bot\Instagram PVA Bot\UploadPic\bin\Debug\BaseLib.dll
+D:\sonu\Instagram PVA Bot\Instagram PVA Bot\UploadPic\bin\Debug\BaseLibIG.dll
+D:\sonu\Instagram PVA Bot\Instagram PVA Bot\UploadPic\bin\Debug\log4net.dll
+D:\sonu\Instagram PVA Bot\Instagram PVA Bot\UploadPic\bin\Debug\System.Data.SQLite.dll
+D:\sonu\Instagram PVA Bot\Instagram PVA Bot\UploadPic\bin\Debug\ChilkatDotNet2.dll
+D:\sonu\Instagram PVA Bot\Instagram PVA Bot\UploadPic\bin\Debug\MySql.Data.dll
+D:\sonu\Instagram PVA Bot\Instagram PVA Bot\UploadPic\bin\Debug\Dapper.dll
+D:\sonu\Instagram PVA Bot\Instagram PVA Bot\UploadPic\bin\Debug\AccountManager.pdb
+D:\sonu\Instagram PVA Bot\Instagram PVA Bot\UploadPic\bin\Debug\BaseLibIG.pdb
+D:\sonu\Instagram PVA Bot\Instagram PVA Bot\UploadPic\bin\Debug\BaseLib.pdb
+D:\sonu\Instagram PVA Bot\Instagram PVA Bot\UploadPic\obj\Debug\UploadPic.csprojResolveAssemblyReference.cache
+D:\sonu\Instagram PVA Bot\Instagram PVA Bot\UploadPic\obj\Debug\UploadPic.dll
+D:\sonu\Instagram PVA Bot\Instagram PVA Bot\UploadPic\obj\Debug\UploadPic.pdb

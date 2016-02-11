@@ -25,8 +25,7 @@ namespace PhoneVerification
         public static AddToLabel objVerifiedAccountCount;
         public static AddToLabel objVerifyFailedAccountCount;
         #region Local Variable For Phone Verification
-        InstagramUser objInstagramUser;
-
+        
         public List<string> listOfAccount = new List<string>();
         public List<Thread> listOfWorkingThread = new List<Thread>();
         public List<string> listOfVerifiedAccount = new List<string>();
@@ -43,6 +42,8 @@ namespace PhoneVerification
         public bool IsMobileVerification = false;
 
         int countThreadControllerVerifyAccount = 0;
+
+        public static int countThreadControllerVerifyAccountNew = 0;
         readonly object lockrThreadControllerCheckAccount = new object();
         #endregion
 
@@ -92,7 +93,7 @@ namespace PhoneVerification
                     
 
                     list_listAccounts = Utils.Split(IGGlobals.listAccounts, numberOfAccountPatch);
-
+                    countThreadControllerVerifyAccountNew = 0;
                     foreach (List<string> listAccounts in list_listAccounts)
                     {
                         //int tempCounterAccounts = 0; 
@@ -126,7 +127,7 @@ namespace PhoneVerification
                                             profilerThread.IsBackground = true;
 
                                             profilerThread.Start(new object[] { item });
-
+                                           // profilerThread.Join();
                                             countThreadControllerVerifyAccount++;
                                         }
                                     }
@@ -141,12 +142,22 @@ namespace PhoneVerification
                                 GlobusLogHelper.log.Error("Error : " + ex.StackTrace);
                             }
                         }
+
+
+                       
                     }
+                                        
                 }
             }
             catch(Exception ex)
             {
                 GlobusLogHelper.log.Error("Error ==> " + ex.Message);
+            }
+            finally
+            {
+                //GlobusLogHelper.log.Info("--------------------------------------------------");
+                //GlobusLogHelper.log.Info("Process Completed");
+                               
             }
         }
 
@@ -154,6 +165,7 @@ namespace PhoneVerification
         {
             try
             {
+                countThreadControllerVerifyAccountNew++;
                 if (!isStopVerifingAccount)
                 {
                     try
@@ -171,7 +183,7 @@ namespace PhoneVerification
                         Array paramsArray = new object[1];
                         paramsArray = (Array)parameters;
 
-                        objInstagramUser = (InstagramUser)paramsArray.GetValue(0);
+                        InstagramUser objInstagramUser = (InstagramUser)paramsArray.GetValue(0);
 
                         if (!objInstagramUser.isloggedin)
                         {
@@ -210,7 +222,7 @@ namespace PhoneVerification
             {
                 try
                 {
-
+                    countThreadControllerVerifyAccountNew--;
                     lock (lockrThreadControllerCheckAccount)
                     {
                         countThreadControllerVerifyAccount--;
@@ -258,10 +270,11 @@ namespace PhoneVerification
                         }
                         /// login to Api 
                         /// 
-                        string homePageResponse = IgUser.globusHttpHelper.getHtmlfromUrl(new Uri("https://www.instagram.com/")); //https://www.instagram.com/integrity/checkpoint/?next=%2F
+                        string homePageResponse = IgUser.globusHttpHelper.getHtmlfromUrlProxy(new Uri("https://www.instagram.com/"), IgUser.proxyip, int.Parse(IgUser.proxyport), IgUser.proxyusername, IgUser.proxypassword); //https://www.instagram.com/integrity/checkpoint/?next=%2F
 
-                        string securityCheckPagesource = IgUser.globusHttpHelper.getHtmlfromUrl(new Uri("https://www.instagram.com/integrity/checkpoint/?next=%2F"));
+                        string securityCheckPagesource = IgUser.globusHttpHelper.getHtmlfromUrlProxy(new Uri("https://www.instagram.com/integrity/checkpoint/?next=%2F"), IgUser.proxyip, int.Parse(IgUser.proxyport), IgUser.proxyusername, IgUser.proxypassword);
 
+                       
                         if (securityCheckPagesource.Contains("Enter your phone number. We&#39;ll text you a security code to make sure it&#39;s you."))
                         {
                             GlobusHttpHelper objGlobusshttphelper=new GlobusHttpHelper();

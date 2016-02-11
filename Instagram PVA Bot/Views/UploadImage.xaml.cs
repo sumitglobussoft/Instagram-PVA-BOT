@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -52,7 +53,10 @@ namespace Instagram_PVA_Bot.Views
                 if (result == true)
                 {
                     DateTime sTime = DateTime.Now;
-                    txt_UploadImage_LoadAccountFilePath.Text = dlg.FileName;
+                    txt_UploadImage_LoadAccountFilePath.Dispatcher.Invoke(new Action(delegate
+                    {
+                        txt_UploadImage_LoadAccountFilePath.Text = dlg.FileName;
+                    }));
 
                     List<string> templist = GlobusFileHelper.ReadFile(dlg.FileName);
                     GlobalDeclaration.objPhoneVerification.listOfAccount = templist.ToList();
@@ -191,7 +195,10 @@ namespace Instagram_PVA_Bot.Views
                 if (result == true)
                 {
                     DateTime sTime = DateTime.Now;
-                    txt_UploadImage_LoadImageFolderPath.Text = ofd.FileName;
+                    txt_UploadImage_LoadImageFolderPath.Dispatcher.Invoke(new Action(delegate
+                    {
+                        txt_UploadImage_LoadImageFolderPath.Text = ofd.FileName;
+                    }));
                     tempList = GetImagePathFromFolder(ofd.FileName);
                     foreach (string item in tempList)
                     {
@@ -313,7 +320,10 @@ namespace Instagram_PVA_Bot.Views
 
                 try
                 {
-                    GlobalDeclaration.objUploadImage.startUploadImage();
+                    Thread objstartUploadImage = new Thread(() => GlobalDeclaration.objUploadImage.startUploadImage());
+                    objstartUploadImage.Start();
+
+                   // GlobalDeclaration.objUploadImage.startUploadImage();
                 }
                 catch(Exception ex)
                 {

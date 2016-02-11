@@ -1076,6 +1076,115 @@ namespace BaseLib
 
         }
 
+        public string postFormDataFromProxyMobileLogin(Uri formActionUrl, string postData, string proxyAddress, int port, string proxyUsername, string proxyPassword)
+        {
+            // postData="charset_test=%E2%82%AC%2C%C2%B4%2C%E2%82%AC%2C%C2%B4%2C%E6%B0%B4%2C%D0%94%2C%D0%84&lsd=AVqEAf6F&locale=en_US&email=soni.sameer123%40rediffmail.com&pass=god@12345&persistent=1&default_persistent=1&charset_test=%E2%82%AC%2C%C2%B4%2C%E2%82%AC%2C%C2%B4%2C%E6%B0%B4%2C%D0%94%2C%D0%84&lsd=AVqEAf6F";
+
+            gRequest = (HttpWebRequest)WebRequest.Create(formActionUrl);
+
+            gRequest.UserAgent = "Instagram 6.21.2 Android (19/4.4.2; 480dpi; 1152x1920; Meizu; MX4; mx4; mt6595; en_US)";
+            gRequest.CookieContainer = new CookieContainer();// gCookiesContainer;
+            gRequest.Method = "POST";
+            // gRequest.Accept = " text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8, */*";
+            //   gRequest.KeepAlive = true;
+            gRequest.ContentType = "application/x-www-form-urlencoded; charset=UTF-8";
+            // gRequest.Headers["Accept-Charset"] = "ISO-8859-1,utf-8;q=0.7,*;q=0.7";
+            // gRequest.Headers["Accept-Language"] = "en-us,en;q=0.5";
+
+
+
+            ChangeProxy(proxyAddress, port, proxyUsername, proxyPassword);
+
+            #region CookieManagement
+            if (this.gCookies != null && this.gCookies.Count > 0)
+            {
+                setExpect100Continue();
+                gRequest.CookieContainer.Add(gCookies);
+            }
+
+            //logic to postdata to the form
+            try
+            {
+                setExpect100Continue();
+                string postdata = string.Format(postData);
+                byte[] postBuffer = System.Text.Encoding.UTF8.GetBytes(postData);
+                gRequest.ContentLength = postBuffer.Length;
+                Stream postDataStream = gRequest.GetRequestStream();
+                postDataStream.Write(postBuffer, 0, postBuffer.Length);
+                postDataStream.Close();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                // Logger.LogText("Internet Connectivity Exception : "+ ex.Message,null);
+            }
+            //post data logic ends
+
+            //Get Response for this request url
+            try
+            {
+                gResponse = (HttpWebResponse)gRequest.GetResponse();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+                //Logger.LogText("Response from "+formActionUrl + ":" + ex.Message,null);
+            }
+
+
+
+            //check if the status code is http 200 or http ok
+
+            if (gResponse.StatusCode == HttpStatusCode.OK)
+            {
+                //get all the cookies from the current request and add them to the response object cookies
+                setExpect100Continue();
+                gResponse.Cookies = gRequest.CookieContainer.GetCookies(gRequest.RequestUri);
+
+                if (gResponse.Cookies.Count > 0)
+                {
+                    //check if this is the first request/response, if this is the response of first request gCookies
+                    //will be null
+                    if (this.gCookies == null)
+                    {
+                        gCookies = gResponse.Cookies;
+                    }
+                    else
+                    {
+                        foreach (Cookie oRespCookie in gResponse.Cookies)
+                        {
+                            bool bMatch = false;
+                            foreach (Cookie oReqCookie in this.gCookies)
+                            {
+                                if (oReqCookie.Name == oRespCookie.Name)
+                                {
+                                    oReqCookie.Value = oRespCookie.Value;
+                                    bMatch = true;
+                                    break; // 
+                                }
+                            }
+                            if (!bMatch)
+                                this.gCookies.Add(oRespCookie);
+                        }
+                    }
+                }
+            #endregion
+
+
+
+                StreamReader reader = new StreamReader(gResponse.GetResponseStream());
+                string responseString = reader.ReadToEnd();
+                reader.Close();
+                //Console.Write("Response String:" + responseString);
+                return responseString;
+            }
+            else
+            {
+                return "Error in posting data";
+            }
+
+        }
+
         public string postFormData(Uri formActionUrl, string postData, ref string responseStatus)
         {
 
@@ -2630,6 +2739,117 @@ namespace BaseLib
             {
                 GlobusLogHelper.log.Error("Error : " + ex.StackTrace);
             }
+            return responseStr;
+        }
+
+        public string HttpUploadFileInstaPicWithProxy(string url, string paramName, string contentType, string localImagePath, NameValueCollection nvc, string proxyAddress, int proxyPort, string proxyUsername,string proxyPassword)
+        {
+
+            bool isAddaCover = false;
+            string responseStr = string.Empty;
+
+            try
+            {
+                ////log.Debug(string.Format("Uploading {0} to {1}", file, url));
+                //string boundary = "---------------------------" + DateTime.Now.Ticks.ToString("");
+                string boundary = "---------------------------" + DateTime.Now.Ticks.ToString();//"-----------------------------" + DateTime.Now.Ticks.ToString();
+                byte[] boundarybytes = System.Text.Encoding.ASCII.GetBytes("\r\n--" + boundary + "\r\n");
+
+                gRequest = (HttpWebRequest)WebRequest.Create(url);
+                gRequest.ContentType = "multipart/form-data; boundary=" + boundary;
+                //gRequest.Referer = "Referer: https://www.facebook.com/profile.php?id=" + userid + "&ref=tn_tnmn";
+                // gRequest.Referer = referer;// "http://www.facebook.com/?sk=welcome";
+
+                gRequest.Method = "POST";
+                gRequest.KeepAlive = true;
+                gRequest.Credentials = System.Net.CredentialCache.DefaultCredentials;
+
+                ChangeProxy(proxyAddress, proxyPort, proxyUsername, proxyPassword);
+
+                //  gRequest.Headers.Add("X-SVN-Rev", "827944");
+                gRequest.UserAgent = UserAgent;
+                // gRequest.AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate;
+
+                gRequest.CookieContainer = new CookieContainer(); //gCookiesContainer;
+
+                #region CookieManagment
+
+                if (this.gCookies != null && this.gCookies.Count > 0)
+                {
+                    gRequest.CookieContainer.Add(gCookies);
+                }
+                #endregion
+
+                using (Stream rs = gRequest.GetRequestStream())
+                {
+                    string formdataTemplate = "Content-Disposition: form-data; name=\"{0}\"\r\n\r\n{1}";
+                    foreach (string key in nvc.Keys)
+                    {
+                        rs.Write(boundarybytes, 0, boundarybytes.Length);
+                        string formitem = string.Format(formdataTemplate, key, nvc[key]);
+                        byte[] formitembytes = System.Text.Encoding.UTF8.GetBytes(formitem);
+                        rs.Write(formitembytes, 0, formitembytes.Length);
+                    }
+                    rs.Write(boundarybytes, 0, boundarybytes.Length);
+
+                    string headerTemplate = "Content-Disposition: form-data; name=\"{0}\"; filename=\"{1}\"\r\nContent-Type: {2}\r\n\r\n";
+                    string header = string.Format(headerTemplate, paramName, "vikas.jpg", contentType);
+                    byte[] headerbytes = System.Text.Encoding.UTF8.GetBytes(header);
+                    rs.Write(headerbytes, 0, headerbytes.Length);
+
+                    using (FileStream fileStream = new FileStream(localImagePath, FileMode.Open, FileAccess.Read))
+                    {
+                        byte[] buffer = new byte[4096];
+                        int bytesRead = 0;
+                        while ((bytesRead = fileStream.Read(buffer, 0, buffer.Length)) != 0)
+                        {
+                            rs.Write(buffer, 0, bytesRead);
+                        }
+                    }
+                    byte[] trailer = System.Text.Encoding.ASCII.GetBytes("\r\n--" + boundary + "--\r\n");
+                    rs.Write(trailer, 0, trailer.Length);
+                }
+
+                #region CookieManagment
+
+                if (this.gCookies != null && this.gCookies.Count > 0)
+                {
+                    gRequest.CookieContainer.Add(gCookies);
+                }
+
+                #endregion
+
+                WebResponse wresp = null;
+                try
+                {
+                    wresp = gRequest.GetResponse();
+                    Stream stream2 = wresp.GetResponseStream();
+                    using (StreamReader reader2 = new StreamReader(stream2))
+                    {
+                        responseStr = reader2.ReadToEnd();
+                    }
+                    return responseStr;
+                    //log.Debug(string.Format("File uploaded, server response is: {0}", reader2.ReadToEnd()));
+                    //return true;
+                }
+                catch (Exception ex)
+                {
+                    //log.Error("Error uploading file", ex);
+                    if (wresp != null)
+                    {
+                        wresp.Close();
+                        wresp = null;
+                    }
+                    // return false;
+                }
+                finally
+                {
+                    gRequest = null;
+                }
+                return responseStr;
+
+            }
+            catch { }
             return responseStr;
         }
 

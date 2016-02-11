@@ -56,7 +56,7 @@
                     </Button>
                    
                     <RadioButton Name="rdoBtn_UploadImage_LoadProfilePic" Content="Upload Profile Pic" Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" Height="25" HorizontalAlignment="Right" />
-                    <RadioButton Name="rdoBtn_UploadImage_PostImage" Content="Post Pic On Wall" Grid.Row="3" Grid.Column="2"  Height="25" HorizontalAlignment="Right"/>
+                    <RadioButton Name="rdoBtn_UploadImage_PostImage" Content="Post Pic On Wall" Grid.Row="3" Grid.Column="2"  Height="25" HorizontalAlignment="Right" Visibility="Hidden"/>
                 </Grid>
             </GroupBox>
             <GroupBox Header="Settings" Grid.Row="1" Grid.Column="0">

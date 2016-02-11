@@ -140,9 +140,8 @@ namespace AccountCreation
                                 GlobusLogHelper.log.Error("Error ==> " + ex.Message);
                             }  
                         }
-                    }
-                  
-                    GlobusLogHelper.log.Info("All Account Created for Instagram");
+                    }                 
+                   
                 }
                
             }
@@ -377,7 +376,10 @@ namespace AccountCreation
                 }
 
             }
-            catch { };
+            catch(Exception ex) 
+            {
+                GlobusLogHelper.log.Error("Error ==> " + ex.Message);
+            }
             //return countOfIterationHere;
         }
     }

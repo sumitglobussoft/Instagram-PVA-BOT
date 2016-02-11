@@ -118,7 +118,7 @@
                     <Grid Background="LightGray" Grid.Row="0" Grid.ColumnSpan="3">
                         <TextBlock Text="Account Creation Report" VerticalAlignment="Center" HorizontalAlignment="Center" FontWeight="Bold" FontSize="14"/>
                     </Grid>
-                    <Label Content="No Of Account Loaded : " Grid.Row="1" Grid.Column="0" Height="25" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Grid.ColumnSpan="2" Margin="0,5" />
+                    <Label Content="No Of Proxy Loaded : " Grid.Row="1" Grid.Column="0" Height="25" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Grid.ColumnSpan="2" Margin="0,5" />
                     <Label Name="lbl_AccountCreation_Report_NoOfAccountLoaded" Grid.Row="1" Grid.Column="2" Content="0" VerticalContentAlignment="Center" Height="25"/>
                     <Label Content="No Of Account Created : " Grid.Row="2" Grid.Column="0" Height="25" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Grid.ColumnSpan="2" Margin="0,7" />
                     <Label Name="lbl_AccountCreation_Report_NoOfAccountCreated" Grid.Row="2" Grid.Column="2" Content="0" VerticalContentAlignment="Center" Height="25"/>

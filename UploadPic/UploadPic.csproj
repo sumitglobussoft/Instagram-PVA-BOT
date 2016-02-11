@@ -39,6 +39,8 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\TwtDominator_5.0\trunk\Libs\32 Bit dlls\System.Data.SQLite.dll</HintPath>
     </Reference>
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Web" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />

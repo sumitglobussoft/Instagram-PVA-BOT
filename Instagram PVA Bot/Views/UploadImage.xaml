@@ -55,8 +55,8 @@
                         </Button.Template>
                     </Button>
                    
-                    <RadioButton Name="rdoBtn_UploadImage_LoadProfilePic" Content="Upload Profile Pic" Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" Height="25" HorizontalAlignment="Right" />
-                    <RadioButton Name="rdoBtn_UploadImage_PostImage" Content="Post Pic On Wall" Grid.Row="3" Grid.Column="2"  Height="25" HorizontalAlignment="Right" Visibility="Hidden"/>
+                    <RadioButton Name="rdoBtn_UploadImage_LoadProfilePic" Content="Upload Profile Pic" Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" Height="25" HorizontalAlignment="Right" Checked="rdoBtn_UploadImage_LoadProfilePic_Checked" />
+                    <RadioButton Name="rdoBtn_UploadImage_PostImage" Content="Post Pic On Wall" Grid.Row="3" Grid.Column="2"  Height="25" HorizontalAlignment="Right" Visibility="Visible" Checked="rdoBtn_UploadImage_PostImage_Checked"/>
                 </Grid>
             </GroupBox>
             <GroupBox Header="Settings" Grid.Row="1" Grid.Column="0">
@@ -73,7 +73,8 @@
                         <RowDefinition Height="8*"/>
                         <RowDefinition Height="11*"/>
                     </Grid.RowDefinitions>
-
+                    <Label Content="No Of Pic PerAccount : " Name="lbl_Uploadpic_NoOfpicPerAccount" Grid.Row="0" Grid.Column="0"  VerticalContentAlignment="Center" HorizontalAlignment="Right" Height="25"/>
+                    <TextBox Name="txt_UploadImage_NoOfPicPerAccount" Grid.Column="1" Grid.Row="0" Text="1" VerticalContentAlignment="Center" Height="25"/>
                     <Label Content="No Of Threads : " Grid.Row="0" Grid.Column="2" Grid.ColumnSpan="2" VerticalContentAlignment="Center" HorizontalAlignment="Right" Height="25"/>
                     <TextBox Name="txt_UploadImage_NoOfThreads" Grid.Column="4" Grid.Row="0" Text="10" VerticalContentAlignment="Center" Height="25"/>
                     <Label Content="Delay From : " Grid.Column="0" Grid.Row="1" VerticalContentAlignment="Center" HorizontalAlignment="Right" Height="25"/>

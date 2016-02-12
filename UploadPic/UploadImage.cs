@@ -1,10 +1,13 @@
 ﻿using Accounts;
 using BaseLib;
+using BaseLibFB;
 using BaseLibID;
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Drawing;
+using System.Drawing.Drawing2D;
+using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -15,8 +18,10 @@ using System.Web;
 
 namespace UploadPic
 {
+    public delegate void addToLabel(int count);
     public class UploadImage
     {
+        public static addToLabel objAddNoOfPicPosted;
         #region Local Variable For Upload  Image
         
         public List<string> listOfAccount = new List<string>();
@@ -33,6 +38,8 @@ namespace UploadPic
         public int minDelay = 10;
         public int maxDelay = 20;
         public int NoOfThreadsUploadImage = 20;
+        public int noOfImagePerAccount = 0;
+        public int noOfPicPosted = 0;
 
         public bool isStopUploadImage = false;
         public bool IsUploadProfilePic = false;
@@ -131,6 +138,18 @@ namespace UploadPic
             catch (Exception ex)
             {
                 GlobusLogHelper.log.Error("Error ==> " + ex.Message);
+            }
+            finally
+            {
+                while (true)
+                {
+                    if(countThreadControllerUploadImage==0)
+                    {
+                        GlobusLogHelper.log.Info("--------------------------------------------------");
+                        GlobusLogHelper.log.Info("Process Completed");
+                        break;
+                    }
+                }
             }
         }
 
@@ -239,7 +258,10 @@ namespace UploadPic
                 string Data_HttpUtility = HttpUtility.UrlEncode(Data);
                 string postDataLoginMobile = "signed_body=" + Sig + "." + Data_HttpUtility + "&ig_sig_key_version=6";
                 string postUrlLogin = "https://i.instagram.com/api/v1/accounts/login/";
+
                 string loginResponse = objInstagramUser.globusHttpHelper.postFormDataFromProxyMobileLogin(new Uri(postUrlLogin), postDataLoginMobile, objInstagramUser.proxyip, int.Parse(objInstagramUser.proxyport), objInstagramUser.proxyusername, objInstagramUser.proxypassword);
+                GlobusHttpHelper objGlobusshttpHelper=new GlobusHttpHelper();
+               // string resp = objGlobusshttpHelper.postFormDataMobileLogin(new Uri(postUrlLogin), postDataLoginMobile);
                 if (loginResponse.Contains(objInstagramUser.username.ToLower()) && !loginResponse.Contains("lt-ie7 not-logged-in"))//marieturnipseed55614
                 {
                     GlobusLogHelper.log.Info("[ Logged in with Account Success :" + objInstagramUser.username + " ]");
@@ -331,41 +353,58 @@ namespace UploadPic
                 {
                     if (queueOfImage.Count > 0)
                     {
-                        string imageFilePath = queueOfImage.Dequeue();                     
-
-                        Image img = Image.FromFile(imageFilePath);
-                        Bitmap btm = new Bitmap(img);
-                        Rectangle rectangle = new Rectangle(0, 0, 10, 10);
-                        Bitmap btm12 = btm.Clone(rectangle, btm.PixelFormat);
-
-                        NameValueCollection nvc = new NameValueCollection();
-                        nvc.Add("device_timestamp", Utils.GenerateTimeStamp());                                            
-                                              
-                        string imageConvertor = "";
-                        string postImageurl = "https://i.instagram.com/api/v1/media/upload/";
-                        string resultOfUploadedPic = objInstagramUser.globusHttpHelper.HttpUploadFileInstaPicWithProxy(postImageurl, "photo", "image/jpeg", imageFilePath, nvc,objInstagramUser.proxyip,int.Parse(objInstagramUser.proxyport),objInstagramUser.proxyusername,objInstagramUser.proxypassword);
-                        
-                        string media_id = string.Empty;
-                        media_id = Utils.getBetween(resultOfUploadedPic, "media_id\":\"", "\"");
-
-                        if (!string.IsNullOrEmpty(media_id))
+                        int countImage=0;
+                        while (true)
                         {
+                            if(noOfImagePerAccount==countImage)
+                            {
+                                break;
+                            }
+                            string imageFilePath = queueOfImage.Dequeue();
+
+                            string InewImageFilePath = ConvertPicIntoActualSize(imageFilePath);
 
 
+                            NameValueCollection nvc = new NameValueCollection();
+                            nvc.Add("device_timestamp", Utils.GenerateTimeStamp());
 
-                            string finalConfigureData = "{\"device_id\":\"" + objInstagramUser.deviceid + "\",\"guid\":\"" + objInstagramUser.guid + "\",\"media_id\":\"" + media_id + "\",\"caption\":\"" + string.Empty + "\",\"device_timestamp\":\"" + Utils.GenerateTimeStamp() + "\",\"source_type\":\"5\",\"filter_type\":\"0\",\"extra\":\"{}\",\"Content-Type\":\"application/x-www-form-urlencoded; charset=UTF-8\"}";
+                            string imageConvertor = "";
+                            string postImageurl = "https://i.instagram.com/api/v1/media/upload/";
+                            string resultOfUploadedPic = objInstagramUser.globusHttpHelper.HttpUploadFileInstaPicWithProxy(postImageurl, "photo", "image/jpeg", InewImageFilePath, nvc, objInstagramUser.proxyip, int.Parse(objInstagramUser.proxyport), objInstagramUser.proxyusername, objInstagramUser.proxypassword);
 
-                            string sigFinal = GenerateSignature(finalConfigureData);
+                            string media_id = string.Empty;
+                            media_id = Utils.getBetween(resultOfUploadedPic, "media_id\":\"", "\"");
 
-                            string Data_HttpUtilityNew = HttpUtility.UrlEncode(finalConfigureData);
+                            if (!string.IsNullOrEmpty(media_id))
+                            {
 
-                            string FinalData = "signed_body=" + sigFinal + "." + Data_HttpUtilityNew + "&ig_sig_key_version=6";
 
-                            string FinalpostUrlLogin = "https://i.instagram.com/api/v1/media/configure/";
+                                string finalConfigureData = "{\"device_id\":\"" + objInstagramUser.deviceid + "\",\"guid\":\"" + objInstagramUser.guid + "\",\"media_id\":\"" + media_id + "\",\"caption\":\"" + string.Empty + "\",\"device_timestamp\":\"" + Utils.GenerateTimeStamp() + "\",\"source_type\":\"5\",\"filter_type\":\"0\",\"extra\":\"{}\",\"Content-Type\":\"application/x-www-form-urlencoded; charset=UTF-8\"}";
 
-                            string Finalresult = objInstagramUser.globusHttpHelper.postFormData(new Uri(FinalpostUrlLogin), FinalData);
-                        }
-        
+                                string sigFinal = GenerateSignature(finalConfigureData);
+
+                                string Data_HttpUtilityNew = HttpUtility.UrlEncode(finalConfigureData);
+
+                                string FinalData = "signed_body=" + sigFinal + "." + Data_HttpUtilityNew + "&ig_sig_key_version=6";
+
+                                string FinalpostUrlLogin = "https://i.instagram.com/api/v1/media/configure/";
+
+                                string Finalresult = objInstagramUser.globusHttpHelper.postFormDataMobileLogin(new Uri(FinalpostUrlLogin), FinalData);
+
+                                if(Finalresult.Contains("status\":\"ok"))
+                                {
+
+                                    GlobusLogHelper.log.Info("Image : " + imageFilePath + " Successfully Posted From Account : " + objInstagramUser.username);
+                                    countImage++;
+                                    noOfPicPosted++;
+                                    objAddNoOfPicPosted(noOfPicPosted);
+                                }
+                                else if (Finalresult.Contains("Error"))
+                                {
+                                    GlobusLogHelper.log.Info("Image : " + imageFilePath + "Not Posted From Account : " + objInstagramUser.username);
+                                }
+                            } 
+                        }        
 
                     }
                 }
@@ -407,6 +446,59 @@ namespace UploadPic
                 //    signature = Convert.ToBase64String(hash);
             }
             return signature;
+        }
+        public string ConvertPicIntoActualSize(string filePath)
+        {
+            try
+            {
+                if(!Directory.Exists(Globals.desktopFolderPath+"\\PostedImage"))
+                {
+                    Directory.CreateDirectory(Globals.desktopFolderPath+"\\PostedImage");
+                }
+
+                string newImagePath = Globals.desktopFolderPath + "\\PostedImage\\" + Path.GetFileName(filePath);
+                int newWidth = 1000;
+                int newHeight = 1000;
+                Image image = Image.FromFile(filePath);
+
+                Bitmap newImage = new Bitmap(newWidth, newHeight, PixelFormat.Format24bppRgb);
+
+                // Draws the image in the specified size with quality mode set to HighQuality
+                using (Graphics graphics = Graphics.FromImage(newImage))
+                {
+                    graphics.CompositingQuality = CompositingQuality.HighQuality;
+                    graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                    graphics.SmoothingMode = SmoothingMode.HighQuality;
+                    graphics.DrawImage(image, 0, 0, newWidth, newHeight);
+                }
+
+
+
+                ImageCodecInfo imageCodecInfo = this.GetEncoderInfo(ImageFormat.Jpeg);
+
+                // Create an Encoder object for the Quality parameter.
+                System.Drawing.Imaging.Encoder encoder = System.Drawing.Imaging.Encoder.Quality;
+
+                // Create an EncoderParameters object. 
+                EncoderParameters encoderParameters = new EncoderParameters(1);
+
+                // Save the image as a JPEG file with quality level.
+                EncoderParameter encoderParameter = new EncoderParameter(encoder, 1024 * 100);
+                encoderParameters.Param[0] = encoderParameter;
+                newImage.Save(newImagePath, imageCodecInfo, encoderParameters);
+
+                //  ImageConverter imgConverter = new ImageConverter();
+                return newImagePath;
+            }
+            catch (Exception ex)
+            {
+                GlobusLogHelper.log.Error("Convert Image Error ==> " + ex.Message);
+                return string.Empty;
+            }
+        }
+        private ImageCodecInfo GetEncoderInfo(ImageFormat format)
+        {
+            return ImageCodecInfo.GetImageDecoders().SingleOrDefault(c => c.FormatID == format.Guid);
         }
     }
 }

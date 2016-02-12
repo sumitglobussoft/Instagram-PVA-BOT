@@ -29,8 +29,23 @@ namespace Instagram_PVA_Bot.Views
         public UploadImage()
         {
             InitializeComponent();
+            UploadPic.UploadImage.objAddNoOfPicPosted = new UploadPic.addToLabel(addToLabelPostedPic);
         }
 
+        public void addToLabelPostedPic(int count)
+        {
+            try
+            {
+                lbl_UploadImage_Report_NoOfPicPosted.Dispatcher.Invoke(new Action(delegate
+                {
+                    lbl_UploadImage_Report_NoOfPicPosted.Content = count.ToString();
+                }));
+            }
+            catch(Exception ex)
+            {
+                GlobusLogHelper.log.Error("Error AddToLabel ==> " + ex.Message);
+            }
+        }
         private void btn_UploadImage_BrowseAccountFile_Click(object sender, RoutedEventArgs e)
         {
             LoadAccounts();
@@ -320,6 +335,7 @@ namespace Instagram_PVA_Bot.Views
 
                 try
                 {
+                    GlobalDeclaration.objUploadImage.noOfImagePerAccount = int.Parse(txt_UploadImage_NoOfPicPerAccount.Text);
                     Thread objstartUploadImage = new Thread(() => GlobalDeclaration.objUploadImage.startUploadImage());
                     objstartUploadImage.Start();
 
@@ -329,6 +345,32 @@ namespace Instagram_PVA_Bot.Views
                 {
                     GlobusLogHelper.log.Error("Error ==> " + ex.StackTrace);
                 }
+            }
+        }
+
+        private void rdoBtn_UploadImage_LoadProfilePic_Checked(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                lbl_Uploadpic_NoOfpicPerAccount.Visibility = Visibility.Hidden;
+                txt_UploadImage_NoOfPicPerAccount.Visibility = Visibility.Hidden;
+            }
+            catch (Exception ex)
+            {
+                GlobusLogHelper.log.Error("Error ==> " + ex.StackTrace);
+            }
+        }
+
+        private void rdoBtn_UploadImage_PostImage_Checked(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                lbl_Uploadpic_NoOfpicPerAccount.Visibility = Visibility.Visible;
+                txt_UploadImage_NoOfPicPerAccount.Visibility = Visibility.Visible;
+            }
+            catch (Exception ex)
+            {
+                GlobusLogHelper.log.Error("Error ==> " + ex.StackTrace);
             }
         }
     }

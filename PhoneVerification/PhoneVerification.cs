@@ -85,12 +85,7 @@ namespace PhoneVerification
                    
                     //webDriver = new ChromeDriver(driverservice, new ChromeOptions());
                     //webDriver.Manage().Window.Position=new Point(-2000, 0);
-
-                    var driverervice = PhantomJSDriverService.CreateDefaultService();
-                    driverervice.HideCommandPromptWindow = true;
-
-                    webDriver = new PhantomJSDriver(driverervice, new PhantomJSOptions());
-                    
+                                     
 
                     list_listAccounts = Utils.Split(IGGlobals.listAccounts, numberOfAccountPatch);
                     countThreadControllerVerifyAccountNew = 0;
@@ -141,10 +136,7 @@ namespace PhoneVerification
                             {
                                 GlobusLogHelper.log.Error("Error : " + ex.StackTrace);
                             }
-                        }
-
-
-                       
+                        }                       
                     }
                                         
                 }
@@ -155,8 +147,15 @@ namespace PhoneVerification
             }
             finally
             {
-                //GlobusLogHelper.log.Info("--------------------------------------------------");
-                //GlobusLogHelper.log.Info("Process Completed");
+                while (true)
+                {
+                    if (countThreadControllerVerifyAccount == 0)
+                    {
+                        GlobusLogHelper.log.Info("--------------------------------------------------");
+                        GlobusLogHelper.log.Info("Process Completed");
+                        break;
+                    }
+                }
                                
             }
         }
@@ -204,8 +203,8 @@ namespace PhoneVerification
                         else
                         {
                             StartActionVerifyAccount(ref objInstagramUser); 
-                           // GlobusLogHelper.log.Info("Couldn't Login With Username : " + objInstagramUser.username);
-                            //GlobusLogHelper.log.Debug("Couldn't Login With Username : " + objInstagramUser.username);
+                            GlobusLogHelper.log.Info("Couldn't Login With Username : " + objInstagramUser.username);
+                            GlobusLogHelper.log.Debug("Couldn't Login With Username : " + objInstagramUser.username);
                         }
                     }
                     catch (Exception ex)
@@ -239,234 +238,297 @@ namespace PhoneVerification
 
         private void StartActionVerifyAccount(ref InstagramUser IgUser)
         {
-            try
+            lock (this)
             {
-                if (isStopVerifingAccount)
-                {
-                    return;
-                }
                 try
                 {
-                    listOfWorkingThread.Add(Thread.CurrentThread);
-                    listOfWorkingThread = listOfWorkingThread.Distinct().ToList();
-                    Thread.CurrentThread.IsBackground = true;
-                }
-                catch (Exception ex)
-                {
-                    GlobusLogHelper.log.Error("Error ==> " + ex.Message);
-                }
-
-                if(listOfAccount.Count>0)
-                {
-                    //if (string.IsNullOrEmpty(usernameOfAPI) || string.IsNullOrEmpty(passwordOfAPI))
-                    //{
-                    //   // GlobusLogHelper.log.Info("Please Enter Username And Password Of API");
-                    //}
-                    //else
+                    if (isStopVerifingAccount)
                     {
-                        if (string.IsNullOrEmpty(IgUser.proxyport))
-                        {
-                            IgUser.proxyport = "80";
-                        }
-                        /// login to Api 
-                        /// 
-                        string homePageResponse = IgUser.globusHttpHelper.getHtmlfromUrlProxy(new Uri("https://www.instagram.com/"), IgUser.proxyip, int.Parse(IgUser.proxyport), IgUser.proxyusername, IgUser.proxypassword); //https://www.instagram.com/integrity/checkpoint/?next=%2F
+                        return;
+                    }
+                    try
+                    {
+                        listOfWorkingThread.Add(Thread.CurrentThread);
+                        listOfWorkingThread = listOfWorkingThread.Distinct().ToList();
+                        Thread.CurrentThread.IsBackground = true;
+                    }
+                    catch (Exception ex)
+                    {
+                        GlobusLogHelper.log.Error("Error ==> " + ex.Message);
+                    }
 
-                        string securityCheckPagesource = IgUser.globusHttpHelper.getHtmlfromUrlProxy(new Uri("https://www.instagram.com/integrity/checkpoint/?next=%2F"), IgUser.proxyip, int.Parse(IgUser.proxyport), IgUser.proxyusername, IgUser.proxypassword);
-
-                       
-                        if (securityCheckPagesource.Contains("Enter your phone number. We&#39;ll text you a security code to make sure it&#39;s you."))
+                    if (listOfAccount.Count > 0)
+                    {
+                        //if (string.IsNullOrEmpty(usernameOfAPI) || string.IsNullOrEmpty(passwordOfAPI))
+                        //{
+                        //   // GlobusLogHelper.log.Info("Please Enter Username And Password Of API");
+                        //}
+                        //else
                         {
-                            GlobusHttpHelper objGlobusshttphelper=new GlobusHttpHelper();
-                            Queue<string> queueOfMobileNo = new Queue<string>();
-                            Queue<string> queueOfMobileNoUrl = new Queue<string>();
-                            string MobileNoHomePageSource = objGlobusshttphelper.getHtmlfromUrlProxy(new Uri("http://www.receive-sms-online.info/"), IgUser.proxyip, int.Parse(IgUser.proxyport), IgUser.proxyusername, IgUser.proxypassword);
-                            
-                            try
+                            if (string.IsNullOrEmpty(IgUser.proxyport))
                             {
-                                string[] getAllNumberDetails = System.Text.RegularExpressions.Regex.Split(MobileNoHomePageSource, "<a href=");
-                                if (getAllNumberDetails.Count() > 0)
-                                {
-                                    foreach(string item in getAllNumberDetails)
-                                    {
-                                        if (item.Contains("read-sms.php") && item.Contains("Receive SMS USA"))
-                                        {
-                                            string mobileNo = string.Empty;
-                                            string mobileNourl = string.Empty;
+                                IgUser.proxyport = "80";
+                            }
+                            /// login to Api 
+                            /// 
+                            string homePageResponse = IgUser.globusHttpHelper.getHtmlfromUrlProxy(new Uri("https://www.instagram.com/"), IgUser.proxyip, int.Parse(IgUser.proxyport), IgUser.proxyusername, IgUser.proxypassword); //https://www.instagram.com/integrity/checkpoint/?next=%2F
 
-                                            mobileNourl = "http://www.receive-sms-online.info/"+ Utils.getBetween(item, "\"", "\"");
-                                            mobileNo = Utils.getBetween(item, "phone=", "\"");
-                                            queueOfMobileNoUrl.Enqueue(mobileNourl);
-                                            queueOfMobileNo.Enqueue(mobileNo);
-                                        }
-                                        else 
+                            string securityCheckPagesource = IgUser.globusHttpHelper.getHtmlfromUrlProxy(new Uri("https://www.instagram.com/integrity/checkpoint/?next=%2F"), IgUser.proxyip, int.Parse(IgUser.proxyport), IgUser.proxyusername, IgUser.proxypassword);
+
+
+                            if (securityCheckPagesource.Contains("Enter your phone number. We&#39;ll text you a security code to make sure it&#39;s you."))
+                            {
+                            startAgain:
+                                GlobusHttpHelper objGlobusshttphelper = new GlobusHttpHelper();
+                                Queue<string> queueOfMobileNo = new Queue<string>();
+                                Queue<string> queueOfMobileNoUrl = new Queue<string>();
+                                string MobileNoHomePageSource = objGlobusshttphelper.getHtmlfromUrlProxy(new Uri("http://www.receive-sms-online.info/"), IgUser.proxyip, int.Parse(IgUser.proxyport), IgUser.proxyusername, IgUser.proxypassword);
+
+                                try
+                                {
+                                    string[] getAllNumberDetails = System.Text.RegularExpressions.Regex.Split(MobileNoHomePageSource, "<a href=");
+                                    if (getAllNumberDetails.Count() > 0)
+                                    {
+                                        foreach (string item in getAllNumberDetails)
                                         {
-                                            continue;
+                                            if (item.Contains("read-sms.php") && item.Contains("Receive SMS USA"))
+                                            {
+                                                string mobileNo = string.Empty;
+                                                string mobileNourl = string.Empty;
+
+                                                mobileNourl = "http://www.receive-sms-online.info/" + Utils.getBetween(item, "\"", "\"");
+                                                mobileNo = Utils.getBetween(item, "phone=", "\"");
+                                                queueOfMobileNoUrl.Enqueue(mobileNourl);
+                                                queueOfMobileNo.Enqueue(mobileNo);
+                                            }
+                                            else
+                                            {
+                                                continue;
+                                            }
                                         }
                                     }
                                 }
-                            }
-                            catch (Exception ex)
-                            {
-                                GlobusLogHelper.log.Error("Error : " + ex.Message);
-                            }
-
-                            if(queueOfMobileNoUrl.Count>0)
-                            {
-                                foreach (string item in queueOfMobileNoUrl)
+                                catch (Exception ex)
                                 {
-                                    try
+                                    GlobusLogHelper.log.Error("Error : " + ex.Message);
+                                }
+
+                                if (queueOfMobileNoUrl.Count > 0)
+                                {
+                              
+                                    foreach (string item in queueOfMobileNoUrl)
                                     {
-                                        string phoneNo = queueOfMobileNo.Dequeue();
-
-                                        string getcsrfmiddlewaretoken = Utils.getBetween(securityCheckPagesource, "csrfmiddlewaretoken\" value=\"", "\"");
-
-                                        string phoneNoPostData = "csrfmiddlewaretoken=" + getcsrfmiddlewaretoken + "&phone_number=%2B" + phoneNo;
-                                        string postUrl = "https://www.instagram.com/integrity/checkpoint/?next=%2F";
-
-                                        string smsActivationPagesource = IgUser.globusHttpHelper.postFormDataProxy(new Uri(postUrl), phoneNoPostData, "https://www.instagram.com/integrity/checkpoint/?next=%2F ", "", "https://www.instagram.com", IgUser.proxyip, int.Parse(IgUser.proxyport), IgUser.proxyusername, IgUser.proxypassword);
-
-                                        if(smsActivationPagesource.Contains("Sorry, please choose a different phone number"))
+                                        try
                                         {
-                                            continue;
+                                            string phoneNo = queueOfMobileNo.Dequeue();
+
+                                            string getcsrfmiddlewaretoken = Utils.getBetween(securityCheckPagesource, "csrfmiddlewaretoken\" value=\"", "\"");
+
+                                            string phoneNoPostData = "csrfmiddlewaretoken=" + getcsrfmiddlewaretoken + "&phone_number=%2B" + phoneNo;
+                                            string postUrl = "https://www.instagram.com/integrity/checkpoint/?next=%2F";
+
+                                            string smsActivationPagesource = IgUser.globusHttpHelper.postFormDataProxy(new Uri(postUrl), phoneNoPostData, "https://www.instagram.com/integrity/checkpoint/?next=%2F ", "", "https://www.instagram.com", IgUser.proxyip, int.Parse(IgUser.proxyport), IgUser.proxyusername, IgUser.proxypassword);
+
+                                            if (smsActivationPagesource.Contains("Sorry, please choose a different phone number"))
+                                            {
+                                                continue;
+                                            }
+
+                                            var driverervice = PhantomJSDriverService.CreateDefaultService();
+                                            driverervice.HideCommandPromptWindow = true;
+
+                                            webDriver = new PhantomJSDriver(driverervice, new PhantomJSOptions());
+                                            Thread.Sleep(5000);
+                                            webDriver.Navigate().GoToUrl(item);
+
+                                            string pageSource = webDriver.PageSource;
+                                            if (string.IsNullOrEmpty(pageSource))
+                                            {
+                                                webDriver.Navigate().GoToUrl(item);
+                                            }
+                                          //  webDriver.Close();
+                                           // webDriver.Dispose();
+                                            string verificationCode = string.Empty;
+
+                                            try
+                                            {
+                                                string[] getsmsData = System.Text.RegularExpressions.Regex.Split(pageSource, "<td>");
+                                                bool isgotSms = false;
+
+                                                foreach (string msg in getsmsData)
+                                                {
+                                                    if(msg.Contains("Instagram account"))
+                                                    {
+                                                        string smsCode = Utils.getBetween(msg, "</script>", "</td>");
+                                                        int count = 0; int countsms = 0;
+                                                        foreach (string data in smsCode.Split(' '))
+                                                        {
+                                                           
+                                                            string sms = data.Replace(".", "").Replace(",", "");
+                                                            System.Text.RegularExpressions.Regex IdCheck = new System.Text.RegularExpressions.Regex("^[0-9]*$");
+                                                            if (IdCheck.IsMatch(sms))
+                                                            {
+                                                                count++;                                                                
+                                                                if(count==1)
+                                                                {
+                                                                    verificationCode = data.Replace(".", "");
+                                                                    isgotSms = true;
+                                                                    break;
+                                                                }
+                                                                else
+                                                                {
+                                                                    verificationCode = verificationCode + " " + sms;
+                                                                    isgotSms = true;
+                                                                    break;
+                                                                }                                                                
+                                                               
+                                                            }
+                                                            
+                                                        }
+                                                    }
+                                                    if(isgotSms)
+                                                    {
+                                                        break;
+                                                    }
+                                                    
+                                                }
+                                                
+                                            }
+                                            catch(Exception ex)
+                                            {
+                                                GlobusLogHelper.log.Error("Error ==> " + ex.StackTrace);
+                                            }
+
+                                            string finalPostData = "csrfmiddlewaretoken=" + getcsrfmiddlewaretoken + "&response_code=" + verificationCode;
+                                            string finalPostUrl = "https://www.instagram.com/integrity/checkpoint/?next=%2F";
+                                            string finalresponse = IgUser.globusHttpHelper.postFormDataProxy(new Uri(finalPostUrl), finalPostData, "https://www.instagram.com/integrity/checkpoint/?next=%2F ", "", "https://www.instagram.com", IgUser.proxyip, int.Parse(IgUser.proxyport), IgUser.proxyusername, IgUser.proxypassword);
+                                            if (finalresponse.Contains("To verify your account, please enter the security code we texted you"))
+                                            {
+                                                continue;
+                                               // goto startAgain;
+                                            }
+                                            if (finalresponse.Contains(IgUser.username) && !(finalresponse.Contains("To verify your account, please enter the security code we texted you")))
+                                            {
+                                                GlobusLogHelper.log.Info(IgUser.username + " Account has been Verified");
+                                                break;
+                                            }
+
+                                            string homepage = IgUser.globusHttpHelper.getHtmlfromUrlProxy(new Uri("https://www.instagram.com/"), IgUser.proxyip, int.Parse(IgUser.proxyport), IgUser.proxyusername, IgUser.proxypassword);
+
+                                            if (!homepage.Contains("logged-in") && !homepage.Contains(IgUser.username))
+                                            {
+                                                GlobusLogHelper.log.Info(IgUser.username + " Account is disable");
+                                                break;
+                                            }
+                                            #region Commented to decode Aes Encoded data
+                                            //string getSMSPageSource = IgUser.globusHttpHelper.getHtmlfromUrlProxy(new Uri(item), IgUser.proxyip, int.Parse(IgUser.proxyport), IgUser.proxyusername, IgUser.proxypassword);
+                                            //string[] getSMS = System.Text.RegularExpressions.Regex.Split(getSMSPageSource, " <tr>");
+                                            //getSMS = getSMS.Take(3).ToArray();
+                                            //getSMS = getSMS.Skip(1).ToArray();
+
+
+
+                                            //foreach(string smsinfo in getSMS)
+                                            //{
+                                            //    try
+                                            //    {
+                                            //        if(smsinfo.Contains("<td>"))
+                                            //        {
+                                            //            string ct = string.Empty;
+                                            //            string iv = string.Empty;
+                                            //            string s = string.Empty;
+
+                                            //            ct = Utils.getBetween(smsinfo, "ct\":\"", "\"");
+                                            //            iv = Utils.getBetween(smsinfo, "iv\":\"", "\"");
+                                            //            s = Utils.getBetween(smsinfo, "s\":\"", "\"");
+
+                                            //           string value= DecryptString(ct, "ct");
+                                            //          // using (Aes aes = new AesManaged())//RijndaelManaged
+                                            //           using (AesManaged aes = new AesManaged())
+                                            //           {
+                                            //               string text="Happy Propose Day";
+                                            //               byte[] rowbyte = Encoding.Unicode.GetBytes(text);
+
+                                            //               byte[] cipherText = null;
+                                            //               byte[] plainText = null;
+                                            //               byte[] IV=new byte[16];
+
+                                            //               aes.BlockSize = 128;
+                                            //               cipherText = Convert.FromBase64String(ct);
+                                            //               IV=Convert.FromBase64String(iv); 
+
+                                            //               aes.Padding = PaddingMode.None;   //PKCS7
+                                            //               aes.KeySize = 128;          // in bits
+                                            //               aes.Key = cipherText;  // 16 bytes for 128 bit encryption
+                                            //               aes.IV = IV;   // AES needs a 16-byte IV
+                                            //               // Should set Key and IV here.  Good approach: derive them from 
+                                            //               // a password via Cryptography.Rfc2898DeriveBytes 
+
+
+
+                                            //               using(MemoryStream ms=new MemoryStream())
+                                            //               {
+                                            //                   using(CryptoStream cs=new CryptoStream(ms,aes.CreateEncryptor(),CryptoStreamMode.Write))
+                                            //                   {
+
+                                            //                   }
+                                            //               }
+
+                                            //               using (MemoryStream ms = new MemoryStream())
+                                            //               {
+                                            //                   using (CryptoStream cs = new CryptoStream(ms, aes.CreateDecryptor(), CryptoStreamMode.Write))
+                                            //                   {
+                                            //                      // cs.Write(cipherText, 0, cipherText.Length);
+                                            //                       cs.Write(cipherText, 0, cipherText.Length);
+                                            //                   }
+
+                                            //                   plainText = ms.ToArray();
+                                            //               }
+
+                                            //               string sms = System.Text.Encoding.Unicode.GetString(plainText);
+
+                                            //               string result = System.Text.Encoding.UTF8.GetString(plainText);
+
+                                            //               result = Encoding.ASCII.GetString(plainText);
+
+
+                                            //               Console.WriteLine(s);
+                                            //           }
+
+                                            //            string sss="";
+
+                                            //        }
+                                            //        else
+                                            //        {
+                                            //            continue;
+                                            //        }
+                                            //    }
+                                            //    catch(Exception ex)
+                                            //    {
+                                            //        GlobusLogHelper.log.Error("Error : " + ex.Message);
+                                            //    }
+                                            //} 
+                                            #endregion
                                         }
-
-                                        //var driverservice = ChromeDriverService.CreateDefaultService();
-                                        //driverservice.HideCommandPromptWindow=true;                                            
-                                        //var webDriver = new ChromeDriver(driverservice, new ChromeOptions());
-                                       // IWebDriver webDriver = new ChromeDriver();
-
-                                        webDriver.Navigate().GoToUrl(item);
-
-                                        string pageSource = webDriver.PageSource;
-                                        webDriver.Close();
-                                        webDriver.Dispose();
-                                        string smsCode = Utils.getBetween(pageSource, "</script>Use ", " to");
-
-                                        string finalPostData = "csrfmiddlewaretoken=" + getcsrfmiddlewaretoken + "&response_code=" + smsCode;
-                                        string finalPostUrl = "https://www.instagram.com/integrity/checkpoint/?next=%2F";
-                                        string finalresponse = IgUser.globusHttpHelper.postFormDataProxy(new Uri(finalPostUrl), finalPostData, "https://www.instagram.com/integrity/checkpoint/?next=%2F ", "", "https://www.instagram.com", IgUser.proxyip, int.Parse(IgUser.proxyport), IgUser.proxyusername, IgUser.proxypassword);
-                                        if (finalresponse.Contains(IgUser.username))
+                                        catch (Exception ex)
                                         {
-                                            GlobusLogHelper.log.Info(IgUser.username + " Account has been Verified");
-                                            break;
+                                            GlobusLogHelper.log.Error("Error : " + ex.Message);
                                         }
-
-                                        string homepage = IgUser.globusHttpHelper.getHtmlfromUrlProxy(new Uri("https://www.instagram.com/"), IgUser.proxyip, int.Parse(IgUser.proxyport), IgUser.proxyusername, IgUser.proxypassword);
-
-                                        if(!homepage.Contains("logged-in") &&! homepage.Contains(IgUser.username))
-                                        {
-                                            GlobusLogHelper.log.Info(IgUser.username + " Account is disable");
-                                            break;
-                                        }
-                                        #region Commented to decode Aes Encoded data
-                                        //string getSMSPageSource = IgUser.globusHttpHelper.getHtmlfromUrlProxy(new Uri(item), IgUser.proxyip, int.Parse(IgUser.proxyport), IgUser.proxyusername, IgUser.proxypassword);
-                                        //string[] getSMS = System.Text.RegularExpressions.Regex.Split(getSMSPageSource, " <tr>");
-                                        //getSMS = getSMS.Take(3).ToArray();
-                                        //getSMS = getSMS.Skip(1).ToArray();
-
-
-
-                                        //foreach(string smsinfo in getSMS)
-                                        //{
-                                        //    try
-                                        //    {
-                                        //        if(smsinfo.Contains("<td>"))
-                                        //        {
-                                        //            string ct = string.Empty;
-                                        //            string iv = string.Empty;
-                                        //            string s = string.Empty;
-
-                                        //            ct = Utils.getBetween(smsinfo, "ct\":\"", "\"");
-                                        //            iv = Utils.getBetween(smsinfo, "iv\":\"", "\"");
-                                        //            s = Utils.getBetween(smsinfo, "s\":\"", "\"");
-
-                                        //           string value= DecryptString(ct, "ct");
-                                        //          // using (Aes aes = new AesManaged())//RijndaelManaged
-                                        //           using (AesManaged aes = new AesManaged())
-                                        //           {
-                                        //               string text="Happy Propose Day";
-                                        //               byte[] rowbyte = Encoding.Unicode.GetBytes(text);
-
-                                        //               byte[] cipherText = null;
-                                        //               byte[] plainText = null;
-                                        //               byte[] IV=new byte[16];
-
-                                        //               aes.BlockSize = 128;
-                                        //               cipherText = Convert.FromBase64String(ct);
-                                        //               IV=Convert.FromBase64String(iv); 
-
-                                        //               aes.Padding = PaddingMode.None;   //PKCS7
-                                        //               aes.KeySize = 128;          // in bits
-                                        //               aes.Key = cipherText;  // 16 bytes for 128 bit encryption
-                                        //               aes.IV = IV;   // AES needs a 16-byte IV
-                                        //               // Should set Key and IV here.  Good approach: derive them from 
-                                        //               // a password via Cryptography.Rfc2898DeriveBytes 
-
-
-
-                                        //               using(MemoryStream ms=new MemoryStream())
-                                        //               {
-                                        //                   using(CryptoStream cs=new CryptoStream(ms,aes.CreateEncryptor(),CryptoStreamMode.Write))
-                                        //                   {
-
-                                        //                   }
-                                        //               }
-
-                                        //               using (MemoryStream ms = new MemoryStream())
-                                        //               {
-                                        //                   using (CryptoStream cs = new CryptoStream(ms, aes.CreateDecryptor(), CryptoStreamMode.Write))
-                                        //                   {
-                                        //                      // cs.Write(cipherText, 0, cipherText.Length);
-                                        //                       cs.Write(cipherText, 0, cipherText.Length);
-                                        //                   }
-
-                                        //                   plainText = ms.ToArray();
-                                        //               }
-
-                                        //               string sms = System.Text.Encoding.Unicode.GetString(plainText);
-
-                                        //               string result = System.Text.Encoding.UTF8.GetString(plainText);
-
-                                        //               result = Encoding.ASCII.GetString(plainText);
-
-
-                                        //               Console.WriteLine(s);
-                                        //           }
-
-                                        //            string sss="";
-
-                                        //        }
-                                        //        else
-                                        //        {
-                                        //            continue;
-                                        //        }
-                                        //    }
-                                        //    catch(Exception ex)
-                                        //    {
-                                        //        GlobusLogHelper.log.Error("Error : " + ex.Message);
-                                        //    }
-                                        //} 
-                                        #endregion
-                                    }
-                                    catch (Exception ex)
-                                    {
-                                        GlobusLogHelper.log.Error("Error : " + ex.Message);
                                     }
                                 }
+
                             }
-                                
-                        }
-                        else if (securityCheckPagesource.Contains(IgUser.username))
-                        {
-                            GlobusLogHelper.log.Info("Account Is Already Verified");
+                            else if (securityCheckPagesource.Contains(IgUser.username))
+                            {
+                                GlobusLogHelper.log.Info("Account : " + IgUser.username  + " Is Already Verified");
+                            }
                         }
                     }
                 }
-            }
-            catch (Exception ex)
-            {
-                GlobusLogHelper.log.Error("Error : " + ex.Message);
+                catch (Exception ex)
+                {
+                    GlobusLogHelper.log.Error("Error : " + ex.Message);
+                } 
             }
         }
         private void StartActionVerifyAccountFromAPI(ref InstagramUser IgUser)

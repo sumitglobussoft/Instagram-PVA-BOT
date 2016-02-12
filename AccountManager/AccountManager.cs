@@ -268,9 +268,8 @@ namespace Accounts
                     GlobusLogHelper.log.Info("[ Logged in with Account Fail : " + InstagramUser.username + " ]");
                 }
                 return Status;
-            }
-               
-            catch
+            }               
+            catch(Exception ex)
             {
                 return null;
             };

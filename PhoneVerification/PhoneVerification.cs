@@ -37,6 +37,8 @@ namespace PhoneVerification
         public int minDelay = 10;
         public int maxDelay = 20;
         public int NoOfThreadsVerifyAccount = 20;
+        public int countVerifiedAccount = 0;
+        public int countNotVerifiedAccount = 0;
 
         public bool isStopVerifingAccount = false;
         public bool IsMobileVerification = false;
@@ -159,7 +161,6 @@ namespace PhoneVerification
                                
             }
         }
-
         public void StartMultiThreadsAccountVerification(object parameters)
         {
             try
@@ -198,11 +199,13 @@ namespace PhoneVerification
                         }
                         if (objInstagramUser.isloggedin)
                         {
-                            StartActionVerifyAccount(ref objInstagramUser);                         
+                            StartActionVerifyAccountFromAPI(ref objInstagramUser);
+                            //StartActionVerifyAccount(ref objInstagramUser);                         
                         }
                         else
                         {
-                            StartActionVerifyAccount(ref objInstagramUser); 
+                            StartActionVerifyAccountFromAPI(ref objInstagramUser);
+                           // StartActionVerifyAccount(ref objInstagramUser); 
                             GlobusLogHelper.log.Info("Couldn't Login With Username : " + objInstagramUser.username);
                             GlobusLogHelper.log.Debug("Couldn't Login With Username : " + objInstagramUser.username);
                         }
@@ -235,7 +238,6 @@ namespace PhoneVerification
                 }
             }
         }
-
         private void StartActionVerifyAccount(ref InstagramUser IgUser)
         {
             lock (this)
@@ -535,23 +537,27 @@ namespace PhoneVerification
         {
             try
             {
+                if (string.IsNullOrEmpty(IgUser.proxyport))
+                {
+                    IgUser.proxyport = "80";
+                }
                 if (listOfAccount.Count>0)
                 {
-                    if (string.IsNullOrEmpty(usernameOfAPI) || string.IsNullOrEmpty(passwordOfAPI))
+                    if (string.IsNullOrEmpty(usernameOfAPI))
                     {
-                        GlobusLogHelper.log.Info("Please Enter Username And Password Of API");
+                        GlobusLogHelper.log.Info("Please Enter Your API Key");
                     }
                     else
-                    {
+                    {                       
                         /// login to Api 
                         /// 
-                        string homePageResponse = IgUser.globusHttpHelper.getHtmlfromUrl(new Uri("https://www.instagram.com/")); //https://www.instagram.com/integrity/checkpoint/?next=%2F
-                        
-                        string securityCheckPagesource = IgUser.globusHttpHelper.getHtmlfromUrl(new Uri("https://www.instagram.com/integrity/checkpoint/?next=%2F"));
+                        string homePageResponse = IgUser.globusHttpHelper.getHtmlfromUrlProxy(new Uri("https://www.instagram.com/"), IgUser.proxyip, int.Parse(IgUser.proxyport), IgUser.proxyusername, IgUser.proxypassword); //https://www.instagram.com/integrity/checkpoint/?next=%2F
+
+                        string securityCheckPagesource = IgUser.globusHttpHelper.getHtmlfromUrlProxy(new Uri("https://www.instagram.com/integrity/checkpoint/?next=%2F"), IgUser.proxyip, int.Parse(IgUser.proxyport), IgUser.proxyusername, IgUser.proxypassword);
 
                         if (securityCheckPagesource.Contains("Enter your phone number. We&#39;ll text you a security code to make sure it&#39;s you."))
                         {
-                            string LoginApiRewsponse = IgUser.globusHttpHelper.getHtmlfromUrl(new Uri("http://smspva.com/priemnik.php?metod=get_balance&service=opt16&apikey=" + System.Configuration.ConfigurationSettings.AppSettings["ApiKey"] ));
+                            string LoginApiRewsponse = IgUser.globusHttpHelper.getHtmlfromUrlProxy(new Uri("http://smspva.com/priemnik.php?metod=get_balance&service=opt16&apikey=" + usernameOfAPI), IgUser.proxyip, int.Parse(IgUser.proxyport), IgUser.proxyusername, IgUser.proxypassword);
 
                             if (LoginApiRewsponse.Contains("response\":\"1\""))
                             {
@@ -559,13 +565,14 @@ namespace PhoneVerification
                                 float currentBalance = float.Parse(balance);
                                 if (currentBalance > 5)
                                 {
-                                    string getFreeCount = IgUser.globusHttpHelper.getHtmlfromUrl(new Uri("http://smspva.com/priemnik.php?metod=get_count&service=opt16&apikey=" + System.Configuration.ConfigurationSettings.AppSettings["ApiKey"] + "&service_id=instagram"));
+                                    string getFreeCount = IgUser.globusHttpHelper.getHtmlfromUrlProxy(new Uri("http://smspva.com/priemnik.php?metod=get_count&service=opt16&apikey=" + usernameOfAPI + "&service_id=instagram"), IgUser.proxyip, int.Parse(IgUser.proxyport), IgUser.proxyusername, IgUser.proxypassword);
                                     if(getFreeCount.Contains("response\":\"1\""))
                                     {
                                         string countDataForInstagram=Utils.getBetween(getFreeCount,"counts Instagram\":\"","\"");
                                         if(int.Parse(countDataForInstagram)>0)
                                         {
-                                            string getNumberResponse = IgUser.globusHttpHelper.getHtmlfromUrl(new Uri("http://smspva.com/priemnik.php?metod=get_number&country=ru&service=opt16&id=1&apikey=" + System.Configuration.ConfigurationSettings.AppSettings["ApiKey"]));
+                                        StartAgain :
+                                            string getNumberResponse = IgUser.globusHttpHelper.getHtmlfromUrlProxy(new Uri("http://smspva.com/priemnik.php?metod=get_number&country=ru&service=opt16&id=1&apikey=" + usernameOfAPI), IgUser.proxyip, int.Parse(IgUser.proxyport), IgUser.proxyusername, IgUser.proxypassword);
                                             if(getNumberResponse.Contains("response\":\"1\""))
                                             {
                                                 string number = Utils.getBetween(getNumberResponse, "number\":\"", "\"");
@@ -579,53 +586,112 @@ namespace PhoneVerification
 
                                                 string smsActivationPagesource = IgUser.globusHttpHelper.postFormDataProxy(new Uri(postUrl), phoneNoPostData, "https://www.instagram.com/integrity/checkpoint/?next=%2F ", "", "https://www.instagram.com", IgUser.proxyip, int.Parse(IgUser.proxyport), IgUser.proxyusername, IgUser.proxypassword);
 
-                                                string numberBanResponse = IgUser.globusHttpHelper.getHtmlfromUrl(new Uri("http://smspva.com/priemnik.php?metod=ban&service=opt16&id="+ID+"&apikey=" + System.Configuration.ConfigurationSettings.AppSettings["ApiKey"]));
-                                                if(numberBanResponse.Contains("response\":\"1\""))
+                                                //string numberBanResponse = IgUser.globusHttpHelper.getHtmlfromUrl(new Uri("http://smspva.com/priemnik.php?metod=ban&service=opt16&id="+ID+"&apikey=" + System.Configuration.ConfigurationSettings.AppSettings["ApiKey"]));
+                                                //if(numberBanResponse.Contains("response\":\"1\""))
                                                 {
-                                                    string getSmsresponse = IgUser.globusHttpHelper.getHtmlfromUrl(new Uri("http://smspva.com/priemnik.php?metod=get_sms&service=opt16&id=" + ID + "&apikey=" + System.Configuration.ConfigurationSettings.AppSettings["ApiKey"]));
-
-                                                    getSmsresponse = IgUser.globusHttpHelper.getHtmlfromUrl(new Uri("http://smspva.com/priemnik.php?metod=get_sms&country=ru&service=opt16&id=" + ID + "&apikey=wOI77pHL3tw9gb0b8OWawvJ11gYXUa"));
+                                                    string getSmsresponse = IgUser.globusHttpHelper.getHtmlfromUrlProxy(new Uri("http://smspva.com/priemnik.php?metod=get_sms&service=opt16&id=" + ID + "&apikey=" + usernameOfAPI), IgUser.proxyip, int.Parse(IgUser.proxyport), IgUser.proxyusername, IgUser.proxypassword);
+                                                    Thread.Sleep(30 * 1000);
+                                                    getSmsresponse = IgUser.globusHttpHelper.getHtmlfromUrlProxy(new Uri("http://smspva.com/priemnik.php?metod=get_sms&country=ru&service=opt16&id=" + ID + "&apikey=" + usernameOfAPI), IgUser.proxyip, int.Parse(IgUser.proxyport), IgUser.proxyusername, IgUser.proxypassword);
                                                     if(getSmsresponse.Contains("response\":\"2\""))
                                                     {
-                                                        getSmsresponse = IgUser.globusHttpHelper.getHtmlfromUrl(new Uri("http://smspva.com/priemnik.php?metod=get_sms&country=ru&service=opt16&id=" + ID + "&apikey=" + System.Configuration.ConfigurationSettings.AppSettings["ApiKey"]));
+                                                        Thread.Sleep(10 * 1000);
+                                                        getSmsresponse = IgUser.globusHttpHelper.getHtmlfromUrlProxy(new Uri("http://smspva.com/priemnik.php?metod=get_sms&country=ru&service=opt16&id=" + ID + "&apikey=" + usernameOfAPI), IgUser.proxyip, int.Parse(IgUser.proxyport), IgUser.proxyusername, IgUser.proxypassword);
+                                                        if(!getNumberResponse.Contains("response\":\"1\""))
+                                                        {
+                                                            Thread.Sleep(5 * 1000);
+                                                            getSmsresponse = IgUser.globusHttpHelper.getHtmlfromUrlProxy(new Uri("http://smspva.com/priemnik.php?metod=get_sms&country=ru&service=opt16&id=" + ID + "&apikey=" + usernameOfAPI), IgUser.proxyip, int.Parse(IgUser.proxyport), IgUser.proxyusername, IgUser.proxypassword);
+                                                            if (!getNumberResponse.Contains("response\":\"1\""))
+                                                            {
+                                                                string numberBanResponse = IgUser.globusHttpHelper.getHtmlfromUrl(new Uri("http://smspva.com/priemnik.php?metod=ban&service=opt16&id=" + ID + "&apikey=" + usernameOfAPI));
+                                                                goto StartAgain;
+                                                            }
+                                                        }                                                        
                                                     }
                                                     else if (getSmsresponse.Contains("response\":\"3\""))
                                                     {
-                                                        string verificationNo = Utils.getBetween(getSmsresponse, "", "");
+                                                        Thread.Sleep(10 * 1000);
+                                                        getSmsresponse = IgUser.globusHttpHelper.getHtmlfromUrlProxy(new Uri("http://smspva.com/priemnik.php?metod=get_sms&country=ru&service=opt16&id=" + ID + "&apikey=" + usernameOfAPI), IgUser.proxyip, int.Parse(IgUser.proxyport), IgUser.proxyusername, IgUser.proxypassword);
+                                                        if (!getNumberResponse.Contains("response\":\"1\""))
+                                                        {
+                                                            Thread.Sleep(5 * 1000);
+                                                            getSmsresponse = IgUser.globusHttpHelper.getHtmlfromUrlProxy(new Uri("http://smspva.com/priemnik.php?metod=get_sms&country=ru&service=opt16&id=" + ID + "&apikey=" + usernameOfAPI), IgUser.proxyip, int.Parse(IgUser.proxyport), IgUser.proxyusername, IgUser.proxypassword);
+                                                            if (!getNumberResponse.Contains("response\":\"1\""))
+                                                            {
+                                                                string numberBanResponse = IgUser.globusHttpHelper.getHtmlfromUrl(new Uri("http://smspva.com/priemnik.php?metod=ban&service=opt16&id=" + ID + "&apikey=" + usernameOfAPI));
+                                                                goto StartAgain;
+                                                            }
+                                                        }     
                                                     }
-                                                    else
+                                                    if (getNumberResponse.Contains("response\":\"1\""))
                                                     {
                                                         string sms=string.Empty;
+                                                        try
+                                                        {
+                                                            sms = Utils.getBetween(getSmsresponse, "sms\":\"", "\"");
+                                                        }
+                                                        catch(Exception ex)
+                                                        {
+                                                            GlobusLogHelper.log.Error("Error ==> " +ex.Message);
+                                                        }
                                                         string finalPostData = "csrfmiddlewaretoken=" + getcsrfmiddlewaretoken + "&response_code=" + sms;
                                                         string finalPostUrl = "https://www.instagram.com/integrity/checkpoint/?next=%2F";
                                                         string finalresponse = IgUser.globusHttpHelper.postFormDataProxy(new Uri(finalPostUrl), finalPostData, "https://www.instagram.com/integrity/checkpoint/?next=%2F ", "", "https://www.instagram.com", IgUser.proxyip, int.Parse(IgUser.proxyport), IgUser.proxyusername, IgUser.proxypassword);
-                                                    }
-                                                }
-                                                else
-                                                {
+                                                        if(finalresponse.Contains("Enter your phone number."))
+                                                        {
+                                                            goto StartAgain;
+                                                        }
+                                                        if(finalresponse.Contains("logged-in") && finalresponse.Contains(IgUser.username))
+                                                        {
+                                                            countVerifiedAccount++;
+                                                            GlobusLogHelper.log.Info("Account : " + IgUser.username + "Has Been Verified");
+                                                            objVerifiedAccountCount(countVerifiedAccount);
+                                                            listOfVerifiedAccount.Add(IgUser.username + ":" + IgUser.password + ":" + IgUser.proxyip + ":" + IgUser.proxyusername + ":" + IgUser.proxypassword);
 
-                                                }
+                                                            Random randomNumber = new Random();
+                                                            int delayAccutal = randomNumber.Next(minDelay, maxDelay);
+                                                            GlobusLogHelper.log.Info("Delay For " + delayAccutal + " Seconds");
+                                                            Thread.Sleep(delayAccutal * 1000);
+                                                        }
+                                                        else
+                                                        {
+                                                            countNotVerifiedAccount++;
+                                                            GlobusLogHelper.log.Info("Account : " + IgUser.username + "not Verified");
+                                                            objVerifyFailedAccountCount(countVerifiedAccount);
+                                                            listOfFailToVerifyAccount.Add(IgUser.username + ":" + IgUser.password + ":" + IgUser.proxyip + ":" + IgUser.proxyusername + ":" + IgUser.proxypassword);
+
+                                                            Random randomNumber = new Random();
+                                                            int delayAccutal = randomNumber.Next(minDelay, maxDelay);
+                                                            GlobusLogHelper.log.Info("Delay For " + delayAccutal + " Seconds");
+                                                            Thread.Sleep(delayAccutal * 1000);
+                                                        }
+                                                    }
+                                                }                                                
                                             }
                                             else
                                             {
-
+                                                goto StartAgain;
                                             }
                                         }
-                                        
+                                        else
+                                        {
+
+                                        }
                                     }
+                                }
+                                else
+                                {
+                                    GlobusLogHelper.log.Info("You Don't Have Enough Balance to Verify Account");
                                 }
                             }
                         }
-                                           
+                        else if(securityCheckPagesource.Contains(IgUser.username))
+                        {
+                            GlobusLogHelper.log.Info("Account : " + IgUser.username  + " Is Already Verified");
+                        }            
                        
 
                     } 
-                }
-                                //   PostDirectMessage(ref tdUser);
-
-                GlobusLogHelper.log.Debug("Process Completed With : " + IgUser.username);
-                GlobusLogHelper.log.Info("Process Completed With : " + IgUser.username);
-
+                }                              
             }
             catch (Exception ex)
             {

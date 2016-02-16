@@ -337,10 +337,20 @@ namespace UploadPic
                         else if(response.Contains("changed_profile\":false") )
                         {
                             GlobusLogHelper.log.Info("Profile Pic Not Changed For User : " + objInstagramUser.username + " Image Is : " + imageFilePath);
+
+                            Random randomNumber = new Random();
+                            int delayAccutal = randomNumber.Next(minDelay, maxDelay);
+                            GlobusLogHelper.log.Info("Delay For " + delayAccutal + " Seconds");
+                            Thread.Sleep(delayAccutal * 1000);
                         }
                         if (response.Contains("has_profile_pic\":false"))
                         {
                             GlobusLogHelper.log.Info("Profile Pic Not Changed For User : " + objInstagramUser.username + " Image Is : " + imageFilePath);
+
+                            Random randomNumber = new Random();
+                            int delayAccutal = randomNumber.Next(minDelay, maxDelay);
+                            GlobusLogHelper.log.Info("Delay For " + delayAccutal + " Seconds");
+                            Thread.Sleep(delayAccutal * 1000);
                         }
                     }
                     else
@@ -393,15 +403,24 @@ namespace UploadPic
 
                                 if(Finalresult.Contains("status\":\"ok"))
                                 {
-
                                     GlobusLogHelper.log.Info("Image : " + imageFilePath + " Successfully Posted From Account : " + objInstagramUser.username);
                                     countImage++;
                                     noOfPicPosted++;
                                     objAddNoOfPicPosted(noOfPicPosted);
+
+                                    Random randomNumber = new Random();
+                                    int delayAccutal = randomNumber.Next(minDelay, maxDelay);
+                                    GlobusLogHelper.log.Info("Delay For " + delayAccutal + " Seconds");
+                                    Thread.Sleep(delayAccutal * 1000);
                                 }
                                 else if (Finalresult.Contains("Error"))
                                 {
                                     GlobusLogHelper.log.Info("Image : " + imageFilePath + "Not Posted From Account : " + objInstagramUser.username);
+
+                                    Random randomNumber = new Random();
+                                    int delayAccutal = randomNumber.Next(minDelay, maxDelay);
+                                    GlobusLogHelper.log.Info("Delay For " + delayAccutal + " Seconds");
+                                    Thread.Sleep(delayAccutal * 1000);
                                 }
                             } 
                         }        

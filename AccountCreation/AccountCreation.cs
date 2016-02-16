@@ -35,6 +35,8 @@ namespace AccountCreation
 
         public bool isStopCreatingAccount = false;
         public bool IsAccountCreation = false;
+        public int countThreadControllerAccountCreation = 0;
+        public readonly object lockrThreadControllerAccountCreation = new object();
 
         public int minDelay = 10;
         public int maxDelay = 20;
@@ -119,27 +121,41 @@ namespace AccountCreation
 
                     while (true)
                     {
-                        lock (this)
+                        try
                         {
+
                             string proxy = QueueOfProxy.Dequeue();
-                            try
+                            lock (lockrThreadControllerAccountCreation)
                             {
-                                Thread objStartCreateAccount= new Thread(() => StartCreateAccount(proxy));                                
-                                objStartCreateAccount.SetApartmentState(ApartmentState.STA);
-                                objStartCreateAccount.Start();
-                                //objStartCreateAccount.Join();
-                                // StartCreateAccount(proxy);
-                                if (QueueOfProxy.Count == 0)
+
+                                try
                                 {
-                                    GlobusLogHelper.log.Info(QueueOfProxy.Count + " Account Created ");
-                                    break;
+                                    if (countThreadControllerAccountCreation >= 25)
+                                    {
+                                        Monitor.Wait(lockrThreadControllerAccountCreation);
+                                    }
+
+                                    Thread objStartCreateAccount = new Thread(() => StartCreateAccount(proxy));
+                                    objStartCreateAccount.SetApartmentState(ApartmentState.STA);
+                                    objStartCreateAccount.Start();
+                                    countThreadControllerAccountCreation++;
                                 }
-                            }
-                            catch (Exception ex)
+                                catch (Exception ex)
+                                {
+                                    GlobusLogHelper.log.Error("Error ==>" + ex.Message);
+                                }
+                            }                           
+                            if (QueueOfProxy.Count == 0)
                             {
-                                GlobusLogHelper.log.Error("Error ==> " + ex.Message);
-                            }  
+                                GlobusLogHelper.log.Info(QueueOfProxy.Count + " Account Created ");
+                                break;
+                            }
                         }
+                        catch (Exception ex)
+                        {
+                            GlobusLogHelper.log.Error("Error ==> " + ex.Message);
+                        }
+                          
                     }                 
                    
                 }
@@ -348,10 +364,11 @@ namespace AccountCreation
                         GlobusLogHelper.log.Error("Error ==> " + ex.Message);
                     }
 
-                    Random randomNumber = new Random();
-                    int delayAccutal = rn.Next(minDelay, maxDelay);
-                    GlobusLogHelper.log.Info("Delay For " + delayAccutal + " Seconds");
-                    Thread.Sleep(delayAccutal * 1000);
+                    Random random = new Random();
+                    int delay = rn.Next(minDelay, maxDelay);
+                    GlobusLogHelper.log.Info("Delay by " + delay + "Second");
+                    Thread.Sleep(delay * 1000);
+                   
                 }
                 else if (postResult.Contains("Another account is using " + emailAddress))
                 {
@@ -359,6 +376,11 @@ namespace AccountCreation
                     noOfAccountFailToCreate++;
                     objFailedAccountAddToLabel(noOfAccountFailToCreate);
                     listOfFailedAccount.Add(emailAddress + ":" + password + ":" + username + ":" + firstName + ":" + lastName + ":" + proxyAddress + ":" + proxyPort + ":" + proxyUsername + ":" + proxyPassword);
+
+                    Random random = new Random();
+                    int delay = rn.Next(minDelay, maxDelay);
+                    GlobusLogHelper.log.Info("Delay by " + delay + "Second");
+                    Thread.Sleep(delay * 1000);
                 }
                 else if (postResult.Contains("error"))
                 {
@@ -366,6 +388,11 @@ namespace AccountCreation
                     noOfAccountFailToCreate++;
                     objFailedAccountAddToLabel(noOfAccountFailToCreate);
                     listOfFailedAccount.Add(emailAddress + ":" + password + ":" + username + ":" + firstName + ":" + lastName + ":" + proxyAddress + ":" + proxyPort + ":" + proxyUsername + ":" + proxyPassword);
+
+                    Random random = new Random();
+                    int delay = rn.Next(minDelay, maxDelay);
+                    GlobusLogHelper.log.Info("Delay by " + delay + "Second");
+                    Thread.Sleep(delay * 1000);
                 }
                 else
                 {
@@ -373,12 +400,31 @@ namespace AccountCreation
                     noOfAccountFailToCreate++;
                     objFailedAccountAddToLabel(noOfAccountFailToCreate);
                     listOfFailedAccount.Add(emailAddress + ":" + password + ":" + username + ":" + firstName + ":" + lastName + ":" + proxyAddress + ":" + proxyPort + ":" + proxyUsername + ":" + proxyPassword);
+                    Random random = new Random();
+                    int delay = rn.Next(minDelay, maxDelay);
+                    GlobusLogHelper.log.Info("Delay by " + delay + "Second");
+                    Thread.Sleep(delay * 1000);
                 }
 
             }
             catch(Exception ex) 
             {
                 GlobusLogHelper.log.Error("Error ==> " + ex.Message);
+            }
+            finally
+            {
+                try
+                {
+                    lock(lockrThreadControllerAccountCreation)
+                    {
+                        countThreadControllerAccountCreation--;
+                        Monitor.Pulse(lockrThreadControllerAccountCreation);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    GlobusLogHelper.log.Error("Error ==> " + ex.Message);
+                }
             }
             //return countOfIterationHere;
         }
